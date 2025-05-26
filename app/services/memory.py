@@ -38,8 +38,8 @@ class MemoryService:
             for msg in messages:
                 if isinstance(msg, HumanMessage):
                     memory_data.append({"role": "user", "content": msg.content})
-                elif isinstance(msg, AIMessage):
-                    memory_data.append({"role": "assistant", "content": msg.content})
+                # elif isinstance(msg, AIMessage):
+                #     memory_data.append({"role": "assistant", "content": msg.content})
 
             self.memory.add(memory_data, user_id=user_id)
             logger.info(f"Stored conversation for user {user_id}")

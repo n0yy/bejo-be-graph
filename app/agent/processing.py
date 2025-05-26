@@ -28,15 +28,16 @@ def processing_node(state: AgentState) -> AgentState:
         [
             (
                 "system",
-                "You are Bejo, an assistant that is helpful, friendly, and informative 😊. "
+                "You are Bejo, an assistant that is helpful, friendly, and informative 😊.\n"
                 "If the information is not available or not clearly stated, respond politely that you do not have enough data to answer.\n\n"
                 "Here is some relevant memory of the user:\n{user_memory}\n\n"
                 "### Supporting Knowledge:\n"
-                "Use this reference **only if it's relevant** to the user's question:\n"
+                "Use this reference **only if it's relevant** to the user's question.\n"
+                "When using this knowledge, **always mention the source** by referencing the provided (Source: ...) in your response:\n"
                 "------------------\n"
                 "{retrieved_knowledge}\n"
-                "------------------\n"
-                "\nStrictly avoid making assumptions or hallucinating information. Always ensure your responses are factual and based on the data above.",
+                "------------------\n\n"
+                "Strictly avoid making assumptions or hallucinating information. Always ensure your responses are factual and based on the data above.",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
@@ -50,12 +51,10 @@ def processing_node(state: AgentState) -> AgentState:
     )
 
     try:
-        # Get response from LLM
         result = settings.llm.invoke(prompt_messages)
-        usage = result.usage_metadata
         response = result.content
 
-        # Track token usage
+        usage = getattr(result, "usage_metadata", None) or {}
         state["input_tokens_usage"] += usage.get("input_tokens", 0)
         state["output_tokens_usage"] += usage.get("output_tokens", 0)
         state["total_tokens_usage"] += usage.get("total_tokens", 0)

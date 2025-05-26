@@ -58,7 +58,22 @@ def retrieval_node(state: AgentState) -> AgentState:
             logger.warning(f"Failed to query {collection_name}: {e}")
 
     # Combine all retrieved knowledge into one string
-    retrieved_knowledge = "\n".join([doc.page_content for doc in all_results])
+    retrieved_knowledge = "\n\n".join(
+        [
+            f"{doc.page_content}\n(Source: {doc.metadata.get('source', 'unknown')})"
+            for doc in all_results
+        ]
+    )
+
+    if not retrieved_knowledge:
+        retrieved_knowledge = (
+            "I'm sorry, I don't have any relevant information for your question."
+        )
+
+    # Remove duplicates
+    retrieved_knowledge = "\n\n".join(set(retrieved_knowledge.split("\n\n")))
+
+    print(retrieved_knowledge)
 
     state["retrieved_knowledge"] = retrieved_knowledge
     logger.info(f"Total retrieved documents: {len(all_results)}")
