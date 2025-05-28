@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import logging
 from app.routes.chat import router as chat_router
+from app.routes.uploads import router as upload_router
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,5 +37,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 # Add route
 app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
+app.include_router(upload_router, prefix="/api/v1", tags=["uploads"])

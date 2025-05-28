@@ -8,6 +8,7 @@ class ChatRequest(BaseModel):
     input: str = Field(..., description="User's question or message")
     category: int = Field(..., ge=1, le=4, description="User category level (1-4)")
     user_id: str = Field(..., description="Unique identifier for the user")
+    thread_id: str = Field(..., description="unique identifier for the session")
 
 
 class ChatResponse(BaseModel):

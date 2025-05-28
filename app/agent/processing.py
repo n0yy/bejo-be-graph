@@ -1,4 +1,4 @@
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.agent.state import AgentState
 from app.services.memory import memory_service
@@ -43,9 +43,14 @@ def processing_node(state: AgentState) -> AgentState:
         ]
     )
 
+    MAX_CONVERSATION_HISTORY = 2
+
+    state["messages"].append(HumanMessage(content=state["messages"][-1].content))
+    limited_messages = state["messages"][-MAX_CONVERSATION_HISTORY * 2 :]
+
     # Format the prompt with context
     prompt_messages = prompt.format_messages(
-        messages=state["messages"],
+        messages=limited_messages,
         user_memory=state["user_memory"],
         retrieved_knowledge=state["retrieved_knowledge"],
     )
