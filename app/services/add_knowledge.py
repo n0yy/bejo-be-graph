@@ -98,7 +98,9 @@ async def add_knowledge(file_content: bytes, safe_filename: str, category_level:
         try:
             embedding = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
             converter = DocumentConverter()
-            splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, chunk_overlap=200
+            )
             qdrant_client = QdrantClient(url="http://localhost:6333")
         except Exception as init_error:
             yield {
@@ -138,7 +140,7 @@ async def add_knowledge(file_content: bytes, safe_filename: str, category_level:
                 }
                 return
         except Exception as check_error:
-            pass  # Collection might not exist yet — continue
+            pass
 
         # STEP 5: CONVERT DOCUMENT
         yield {"step": "converting", "message": "Converting...", "progress": 50}
