@@ -20,6 +20,11 @@ async def upload_files(
 
     safe_filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", file.filename)
 
+    if category_level < 1 or category_level > 4:
+        raise HTTPException(
+            status_code=403, detail="Category level must be between 1 and 4"
+        )
+
     async def generate_progress():
         try:
             async for progress in add_knowledge(

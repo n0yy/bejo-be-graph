@@ -1,31 +1,46 @@
-FROM python:3.11-slim
+# Build stage
+FROM python:3.11-slim as builder
 
+# Set working directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-    curl -sSL https://astral.sh/uv/install.sh | sh
+# Install Python dependencies
+COPY pyproject.toml .
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev --no-interaction --no-ansi
 
-ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
+# Production stage
+FROM python:3.11-slim
 
-COPY pyproject.toml ./
+# Set working directory
+WORKDIR /app
 
-RUN uv venv && \
-    . .venv/bin/activate && \
-    uv pip install --no-cache-dir -e .
+# Create non-root user
+RUN useradd -m -u 1000 appuser
 
-COPY app/ ./app/
-COPY .env* ./
+# Copy only necessary files from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-RUN mkdir -p app/uploads
+# Copy application code
+COPY app/ app/
+COPY main.py .
 
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
-
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 

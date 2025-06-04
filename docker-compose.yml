@@ -1,51 +1,57 @@
-services:
-  qdrant:
-    image: qdrant/qdrant:v1.14.1
-    container_name: bejo-qdrant
-    ports:
-      - "${QDRANT_FIRST_PORT:-6333}:6333"
-      - "${QDRANT_SECOND_PORT:-6334}:6334"
-    volumes:
-      - qdrant_storage:/qdrant/storage
-    environment:
-      - QDRANT__SERVICE__HTTP_PORT=6333
-      - QDRANT__SERVICE__GRPC_PORT=6334
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-    networks:
-      - bejo-network
+version: "3.8"
 
-  bejo-api:
+services:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: bejo-api
     ports:
       - "8000:8000"
-    volumes:
-      - ./app/uploads:/app/app/uploads
-      - ./.env:/app/.env
     environment:
       - QDRANT_URL=http://qdrant:6333
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - LLM_MODEL=gemini-2.0-flash
+      - EMBEDDING_MODEL=models/text-embedding-004
+      - LLM_TEMPERATURE=0.7
+    volumes:
+      - ./app/uploads:/app/app/uploads
     depends_on:
       qdrant:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 3
+      start_period: 40s
     networks:
       - bejo-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: bejo-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - bejo-network
 
 volumes:
-  qdrant_storage:
+  qdrant_data:
     driver: local
 
 networks:
